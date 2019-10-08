@@ -5,13 +5,13 @@
 #include "image.h"
 
 #define get_index(im, x, y, c) ((x) + ((im.w) * (y)) + ((im.w) * (im.h) * (c)))
-#define get_inbound_index(a, min, max) (((a) > max) ? max : (((a) < min) ? min : (a)))
+#define get_inbound(a, min, max) (((a) > max) ? max : (((a) < min) ? min : (a)))
 #define in_bounds(im, x, y, c) ((x) < im.w && (y) < im.h && (c) < im.c)
 
 float get_pixel(image im, int x, int y, int c)
 {
-    return im.data[get_index(im, get_inbound_index(x, 0, im.w - 1), get_inbound_index(y, 0, im.h - 1)
-            , get_inbound_index(c, 0, im.c - 1))];
+    return im.data[get_index(im, get_inbound(x, 0, im.w - 1), get_inbound(y, 0, im.h - 1)
+            , get_inbound(c, 0, im.c - 1))];
 }
 
 void set_pixel(image im, int x, int y, int c, float v)
@@ -49,12 +49,27 @@ image rgb_to_grayscale(image im)
 
 void shift_image(image im, int c, float v)
 {
-    // TODO Fill this in
+    if (!in_bounds(im, 0, 0, c)) return;
+
+    int index = get_index(im, 0, 0, c);
+    for (int h = 0; h < im.h; h++) {
+        for (int w = 0; w < im.w; w++) {
+            im.data[index++] += v;
+        }
+    }
 }
 
 void clamp_image(image im)
 {
-    // TODO Fill this in
+    int index = 0;
+    for (int c = 0; c < im.c; c++) {
+        for (int h = 0; h < im.h; h++) {
+            for (int w = 0; w < im.w; w++) {
+                im.data[index] = get_inbound(im.data[index], 0, 1);
+                index++;
+            }
+        }
+    }
 }
 
 
