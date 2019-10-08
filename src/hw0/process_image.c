@@ -31,12 +31,16 @@ image rgb_to_grayscale(image im)
 {
     assert(im.c == 3);
     image gray = make_image(im.w, im.h, 1);
+
     float weights[] = { 0.299, 0.587, 0.114 };
+    int image_index = 0;
 
     for (int c = 0; c < im.c; c++) {
+        int gray_index = 0;
+
         for (int h = 0; h < im.h; h++) {
             for (int w = 0; w < im.w; w++) {
-                gray.data[get_index(gray, w, h, 0)] += weights[c] * im.data[get_index(im, w, h, c)];
+                gray.data[gray_index++] += weights[c] * im.data[image_index++];
             }
         }
     }
