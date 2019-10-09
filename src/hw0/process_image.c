@@ -7,7 +7,6 @@
 #define get_index(im, x, y, c) ((x) + ((im).w * (y)) + ((im).w * (im).h * (c)))
 #define get_inbound(a, min, max) (((a) > max) ? max : (((a) < min) ? min : (a)))
 #define in_bounds(im, x, y, c) ((x) < (im).w && (y) < (im).h && (c) < (im).c)
-#define abs(x) (((x) < 0) ? -(x) : (x))
 
 float get_pixel(image im, int x, int y, int c)
 {
