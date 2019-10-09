@@ -59,6 +59,18 @@ void shift_image(image im, int c, float v)
     }
 }
 
+void scale_image(image im, int c, float v)
+{
+    if (!in_bounds(im, 0, 0, c)) return;
+
+    int index = get_index(im, 0, 0, c);
+    for (int h = 0; h < im.h; h++) {
+        for (int w = 0; w < im.w; w++) {
+            im.data[index++] *= v;
+        }
+    }
+}
+
 void clamp_image(image im)
 {
     int index = 0;
