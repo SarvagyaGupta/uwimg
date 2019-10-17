@@ -31,4 +31,12 @@ clamp_image(im)
 hsv_to_rgb(im)
 save_image(im, "dog_saturated")
 
+# 8. Scale image
+im = load_image("data/dog.jpg")
+rgb_to_hsv(im)
+scale_image(im, 1, 2)
+clamp_image(im)
+hsv_to_rgb(im)
+save_image(im, "dog_scale_saturated")
+
 
