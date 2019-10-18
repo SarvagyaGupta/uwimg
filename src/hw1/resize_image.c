@@ -5,7 +5,6 @@
 #define func(im, x, y, c, nn) ((nn) ? nn_interpolate((im), (x), (y), (c)) : bilinear_interpolate((im), (x), (y), (c)))
 
 image resize(image, int, int, int);
-
 int find_closest_int(float, int);
 float get_contribution(image, int, int, float, float, int);
 
@@ -36,9 +35,9 @@ image nn_resize(image im, int w, int h)
 
 float bilinear_interpolate(image im, float x, float y, int c)
 {
-    int x_int = (int) x;
+    int x_int = floor(x);
     float x_dec = x - x_int;
-    int y_int = (int) y;
+    int y_int = floor(y);
     float y_dec = y - y_int;
 
     return get_contribution(im, x_int, y_int, 1 - x_dec, 1 - y_dec, c)
