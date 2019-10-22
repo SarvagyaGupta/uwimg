@@ -7,6 +7,8 @@
 #define TWOPI 6.2831853
 
 float get_convolved_value(image, image, int, int, int);
+float get_gaussian_value(int, int, float);
+image superimpose_image(image, image, int);
 
 void l1_normalize(image im)
 {
@@ -20,7 +22,11 @@ void l1_normalize(image im)
     }
 
     for (int c = 0; c < im.c; c++) {
-        scale_image(im, c, 1.0 / sum);
+        if (sum != 0) {
+            scale_image(im, c, 1.0 / sum);
+        } else {
+            scale_image(im, c, 0);
+        }
     }
 }
 
@@ -126,32 +132,78 @@ image make_emboss_filter()
 
 image make_gaussian_filter(float sigma)
 {
-    // TODO
-    return make_image(1,1,1);
+    int sigma_ = ceil(sigma * 6);
+    int size = sigma_ + (sigma_ % 2 == 0 ? 1 : 0);
+    int half_size = size / 2;
+
+    image filter = make_image(size, size, 1);
+
+    for (int y = -half_size; y <= half_size; y++) {
+        for (int x = -half_size; x <= half_size; x++) {
+            set_pixel(filter, half_size + x, half_size + y, 0, get_gaussian_value(x, y, sigma));
+        }
+    }
+
+    l1_normalize(filter);
+    return filter;
+}
+
+float get_gaussian_value(int x, int y, float sigma) {
+    double expo = exp(-((pow(x, 2) + pow(y, 2)) / (2 * pow(sigma, 2))));
+    float scale = TWOPI * pow(sigma, 2);
+    return expo / scale;
 }
 
 image add_image(image a, image b)
 {
-    // TODO
-    return make_image(1,1,1);
+    return superimpose_image(a, b, 1);
 }
 
 image sub_image(image a, image b)
 {
-    // TODO
-    return make_image(1,1,1);
+    return superimpose_image(a, b, -1);
+}
+
+image superimpose_image(image a, image b, int factor) {
+    assert(a.c == b.c && a.h == b.h && a.w == b.w);
+
+    image res_image = make_image(a.w, a.h, a.c);
+    for (int c = 0; c < b.c; c++) {
+        for (int y = 0; y < b.h; y++) {
+            for (int x = 0; x < b.w; x++) {
+                set_pixel(res_image, x, y, c, get_pixel(a, x, y, c) + factor * get_pixel(b, x, y, c));
+            }
+        }
+    }
+    return res_image;
 }
 
 image make_gx_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image filter = make_image(3, 3, 1);
+
+    set_pixel(filter, 0, 0, 0, -1);
+    set_pixel(filter, 0, 2, 0, 1);
+    set_pixel(filter, 1, 0, 0, -2);
+    set_pixel(filter, 1, 2, 0, 2);
+    set_pixel(filter, 2, 0, 0, -1);
+    set_pixel(filter, 2, 2, 0, 1);
+
+    return filter;
 }
 
 image make_gy_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image filter = make_image(3, 3, 1);
+
+    set_pixel(filter, 0, 0, 0, -1);
+    set_pixel(filter, 0, 1, 0, -2);
+    set_pixel(filter, 0, 2, 0, -1);
+    set_pixel(filter, 2, 0, 0, 1);
+    set_pixel(filter, 2, 1, 0, 2);
+    set_pixel(filter, 2, 2, 0, 1);
+
+    return filter;
 }
 
 void feature_normalize(image im)
