@@ -52,8 +52,8 @@ image convolve_image(image im, image filter, int preserve)
         for (int c = 0; c < filtered_image.c; c++) {
             for (int h = 0; h < filtered_image.h; h++) {
                 for (int w = 0; w < filtered_image.w; w++) {
-                    float val = get_pixel(merged_filtered_image, w, h, 1) + get_pixel(filtered_image, c, h, w);
-                    set_pixel(merged_filtered_image, w, h, 1, val);
+                    float val = get_pixel(merged_filtered_image, w, h, 0) + get_pixel(filtered_image, w, h, c);
+                    set_pixel(merged_filtered_image, w, h, 0, val);
                 }
             }
         }
@@ -79,20 +79,43 @@ float get_convolved_value(image im, image filter, int x, int y, int c) {
 
 image make_highpass_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image filter = make_image(3, 3, 1);
+
+    set_pixel(filter, 0, 1, 0, -1);
+    set_pixel(filter, 1, 0, 0, -1);
+    set_pixel(filter, 1, 1, 0, 4);
+    set_pixel(filter, 1, 2, 0, -1);
+    set_pixel(filter, 2, 1, 0, -1);
+
+    return filter;
 }
 
 image make_sharpen_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image filter = make_image(3, 3, 1);
+
+    set_pixel(filter, 0, 1, 0, -1);
+    set_pixel(filter, 1, 0, 0, -1);
+    set_pixel(filter, 1, 1, 0, 5);
+    set_pixel(filter, 1, 2, 0, -1);
+    set_pixel(filter, 2, 1, 0, -1);
+
+    return filter;
 }
 
 image make_emboss_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image filter = make_image(3, 3, 1);
+
+    set_pixel(filter, 0, 0, 0, -2);
+    set_pixel(filter, 0, 1, 0, -1);
+    set_pixel(filter, 1, 0, 0, -1);
+    set_pixel(filter, 1, 1, 0, 1);
+    set_pixel(filter, 1, 2, 0, 1);
+    set_pixel(filter, 2, 1, 0, 1);
+    set_pixel(filter, 2, 2, 0, 2);
+
+    return filter;
 }
 
 // Question 2.2.1: Which of these filters should we use preserve when we run our convolution and which ones should we not? Why?
