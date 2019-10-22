@@ -38,3 +38,7 @@ res = sobel_image(im)
 mag = res[0]
 feature_normalize(mag)
 save_image(mag, "magnitude")
+
+im = load_image("data/dog.jpg")
+res = colorize_sobel(im)
+save_image(res, "colored_sobel_image")

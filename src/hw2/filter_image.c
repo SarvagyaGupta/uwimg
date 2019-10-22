@@ -256,6 +256,20 @@ image *sobel_image(image im)
 
 image colorize_sobel(image im)
 {
-    // TODO
-    return make_image(1,1,1);
+    image gaussian_filter = make_gaussian_filter(2);
+    image filtered_image = convolve_image(im, gaussian_filter, 1);
+    image* sobel_images = sobel_image(filtered_image);
+    feature_normalize(sobel_images[0]);
+    feature_normalize(sobel_images[1]);
+
+    image res = make_image(im.w, im.h, im.c);
+    for (int y = 0; y < im.h; y++) {
+        for (int x = 0; x < im.w; x++) {
+            set_pixel(res, x, y, 0, get_pixel(sobel_images[1], x, y, 0));
+            set_pixel(res, x, y, 1, get_pixel(sobel_images[0], x, y, 0));
+            set_pixel(res, x, y, 2, 1 - get_pixel(sobel_images[0], x, y, 0));
+        }
+    }
+    hsv_to_rgb(res);
+    return res;
 }
