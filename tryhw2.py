@@ -1,0 +1,62 @@
+from uwimg import *
+im = load_image("data/dog.jpg")
+f = make_box_filter(7)
+blur = convolve_image(im, f, 1)
+save_image(blur, "dog-box7")
+
+im = load_image("data/dog.jpg")
+f = make_box_filter(7)
+blur = convolve_image(im, f, 1)
+thumb = nn_resize(blur, blur.w//7, blur.h//7)
+save_image(thumb, "dogthumb")
+
+im = load_image("data/dog.jpg")
+f = make_sharpen_filter()
+blur = convolve_image(im, f, 1)
+clamp_image(blur)
+save_image(blur, "dog-sharpen2")
+
+im = load_image("data/dog.jpg")
+f = make_highpass_filter()
+blur = convolve_image(im, f, 0)
+clamp_image(blur)
+save_image(blur, "dog-highpass2")
+
+im = load_image("data/dog.jpg")
+f = make_emboss_filter()
+blur = convolve_image(im, f, 1)
+clamp_image(blur)
+save_image(blur, "dog-emboss2")
+
+im = load_image("data/dog.jpg")
+f = make_gaussian_filter(2)
+blur = convolve_image(im, f, 1)
+save_image(blur, "dog-gauss2")
+
+im = load_image("data/dog.jpg")
+f = make_gaussian_filter(2)
+lfreq = convolve_image(im, f, 1)
+hfreq = sub_image(im, lfreq)
+reconstruct = add_image(lfreq, hfreq)
+save_image(lfreq, "low-frequency")
+save_image(hfreq, "high-frequency")
+save_image(reconstruct, "reconstruct")
+
+im = load_image("data/dog.jpg")
+f = make_gaussian_filter(2)
+lfreq = convolve_image(im, f, 1)
+hfreq = sub_image(im, lfreq)
+reconstruct = add_image(lfreq, hfreq)
+save_image(lfreq, "low-frequency")
+save_image(hfreq, "high-frequency")
+save_image(reconstruct, "reconstruct")
+
+im = load_image("data/dog.jpg")
+res = sobel_image(im)
+mag = res[0]
+feature_normalize(mag)
+save_image(mag, "magnitude")
+
+im = load_image("data/dog.jpg")
+res = colorize_sobel(im)
+save_image(res, "colored_sobel_image")
