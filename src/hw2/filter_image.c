@@ -208,13 +208,50 @@ image make_gy_filter()
 
 void feature_normalize(image im)
 {
-    // TODO
+    for (int c = 0; c < im.c; c++) {
+        float min = get_pixel(im, 0, 0, c);
+        float max = min;
+
+        for (int y = 0; y < im.h; y++) {
+            for (int x = 0; x < im.w; x++) {
+                float val = get_pixel(im, x, y, c);
+                min = min > val ? val : min;
+                max = max < val ? val : max;
+            }
+        }
+
+        float range = max - min;
+        for (int y = 0; y < im.h; y++) {
+            for (int x = 0; x < im.w; x++) {
+                if (range == 0) {
+                    set_pixel(im, x, y, c, 0);
+                } else {
+                    set_pixel(im, x, y, c, (get_pixel(im, x, y, c) - min) / range);
+                }
+            }
+        }
+    }
 }
 
 image *sobel_image(image im)
 {
-    // TODO
-    return calloc(2, sizeof(image));
+    image gradient_x = convolve_image(im, make_gx_filter(), 0);
+    image gradient_y = convolve_image(im, make_gy_filter(), 0);
+
+    image* sobel_images = calloc(2, sizeof(image));
+    sobel_images[0] = make_image(im.w, im.h, 1);
+    sobel_images[1] = make_image(im.w, im.h, 1);
+
+    for (int y = 0; y < im.h; y++) {
+        for (int x = 0; x < im.w; x++) {
+            float gradient_x_val = get_pixel(gradient_x, x, y, 0);
+            float gradient_y_val = get_pixel(gradient_y, x, y, 0);
+            set_pixel(sobel_images[0], x, y, 0, sqrt(pow(gradient_x_val, 2) + pow(gradient_y_val, 2)));
+            set_pixel(sobel_images[1], x, y, 0, atan2(gradient_x_val, gradient_y_val));
+        }
+    }
+
+    return sobel_images;
 }
 
 image colorize_sobel(image im)

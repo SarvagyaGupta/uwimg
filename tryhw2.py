@@ -32,3 +32,9 @@ reconstruct = add_image(lfreq, hfreq)
 save_image(lfreq, "low-frequency")
 save_image(hfreq, "high-frequency")
 save_image(reconstruct, "reconstruct")
+
+im = load_image("data/dog.jpg")
+res = sobel_image(im)
+mag = res[0]
+feature_normalize(mag)
+save_image(mag, "magnitude")
