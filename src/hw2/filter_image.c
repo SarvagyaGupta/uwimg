@@ -125,10 +125,11 @@ image make_emboss_filter()
 }
 
 // Question 2.2.1: Which of these filters should we use preserve when we run our convolution and which ones should we not? Why?
-// Answer: TODO
+// Answer: We need to preserve convolutions from the sharpen and emboss filter if we want to have color in the picture.
+//         We don't preserve the convolutions from the highpass filter as it is going to be on a grayscale.
 
 // Question 2.2.2: Do we have to do any post-processing for the above filters? Which ones and why?
-// Answer: TODO
+// Answer: We will have to do clamping for all the filters to ensure that the RGB values are not outside the [0, 1] range
 
 image make_gaussian_filter(float sigma)
 {
