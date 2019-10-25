@@ -44,7 +44,7 @@ image make_box_filter(int w)
 
 image convolve_image(image im, image filter, int preserve)
 {
-    image filtered_image = copy_image(im);
+    image filtered_image = make_image(im.w, im.h, im.c);
     for (int c = 0; c < im.c; c++) {
         for (int h = 0; h < im.h; h++) {
             for (int w = 0; w < im.w; w++) {
@@ -63,6 +63,8 @@ image convolve_image(image im, image filter, int preserve)
                 }
             }
         }
+
+        free_image(filtered_image);
         return merged_filtered_image;
     }
 
