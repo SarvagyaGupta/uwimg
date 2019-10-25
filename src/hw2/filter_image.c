@@ -252,6 +252,8 @@ image *sobel_image(image im)
         }
     }
 
+    free_image(gradient_x);
+    free_image(gradient_y);
     return sobel_images;
 }
 
@@ -272,5 +274,11 @@ image colorize_sobel(image im)
         }
     }
     hsv_to_rgb(res);
+
+    free_image(gaussian_filter);
+    free_image(filtered_image);
+    free_image(sobel_images[0]);
+    free_image(sobel_images[1]);
+
     return res;
 }
