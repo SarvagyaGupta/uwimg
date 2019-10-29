@@ -51,7 +51,6 @@ void rgb_to_hsv(image im);
 void hsv_to_rgb(image im);
 void shift_image(image im, int c, float v);
 void scale_image(image im, int c, float v);
-void scale_image(image im, int c, float v);
 void clamp_image(image im);
 image get_channel(image im, int c);
 int same_image(image a, image b);
