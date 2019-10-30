@@ -9,6 +9,7 @@
 
 void set_channel(image, int, image, image);
 float get_1d_gaussian_value(int, float);
+void suppress_pixel(image, image, int, int, int);
 
 // Frees an array of descriptors.
 // descriptor *d: the array.
@@ -173,24 +174,49 @@ void set_channel(image structure, int channel, image first, image second) {
 image cornerness_response(image S)
 {
     image R = make_image(S.w, S.h, 1);
-    // TODO: fill in R, "cornerness" for each pixel using the structure matrix.
-    // We'll use formulation det(S) - alpha * trace(S)^2, alpha = .06.
+    float alpha = 0.06;
+    for (int y = 0; y < S.h; y++) {
+        for (int x = 0; x < S.w; x++) {
+            float det = get_pixel(S, x, y, 0) * get_pixel(S, x, y, 1) - pow(get_pixel(S, x, y, 2), 2);
+            float trace = get_pixel(S, x, y, 0) + get_pixel(S, x, y, 1);
+            set_pixel(R, x, y, 0, det - alpha * pow(trace, 2));
+        }
+    }
     return R;
 }
 
-// Perform non-max supression on an image of feature responses.
+// Perform non-max suppression on an image of feature responses.
 // image im: 1-channel image of feature responses.
 // int w: distance to look for larger responses.
 // returns: image with only local-maxima responses within w pixels.
 image nms_image(image im, int w)
 {
-    image r = copy_image(im);
-    // TODO: perform NMS on the response map.
-    // for every pixel in the image:
-    //     for neighbors within w:
-    //         if neighbor response greater than pixel response:
-    //             set response to be very low (I use -999999 [why not 0??])
-    return r;
+    image nms = copy_image(im);
+    for (int y = 0; y < im.h; y++) {
+        for (int x = 0; x < im.w; x++) {
+            if (get_pixel(nms, x, y, 0) != -999999) {
+                suppress_pixel(im, nms, y, x, w);
+            }
+        }
+    }
+    return nms;
+}
+
+void suppress_pixel(image im, image nms, int r, int c, int w) {
+    float max_val = get_pixel(im, c, r, 0);
+    for (int y = r - w; y <= r + w; y++) {
+        for (int x = c - w; x <= c + w; x++) {
+            max_val = max_val >= get_pixel(im, x, y, 0) ? max_val : get_pixel(im, x, y, 0);
+        }
+    }
+
+    for (int y = r - w; y <= r + w; y++) {
+        for (int x = c - w; x <= c + w; x++) {
+            if (get_pixel(im, x, y, 0) < max_val) {
+                set_pixel(nms, x, y, 0, -999999);
+            }
+        }
+    }
 }
 
 // Perform harris corner detection and extract features from the corners.
@@ -211,15 +237,28 @@ descriptor *harris_corner_detector(image im, float sigma, float thresh, int nms,
     // Run NMS on the responses
     image Rnms = nms_image(R, nms);
 
+    int count = 0; // change this
 
-    //TODO: count number of responses over threshold
-    int count = 1; // change this
+    for (int y = 0; y < Rnms.h; y++) {
+        for (int x = 0; x < Rnms.w; x++) {
+            if (get_pixel(Rnms, x, y, 0) > thresh) {
+                count++;
+            }
+        }
+    }
 
-    
     *n = count; // <- set *n equal to number of corners in image.
-    descriptor *d = calloc(count, sizeof(descriptor));
-    //TODO: fill in array *d with descriptors of corners, use describe_index.
 
+    descriptor *d = calloc(count, sizeof(descriptor));
+
+    int index = 0;
+    for (int y = 0; y < Rnms.h; y++) {
+        for (int x = 0; x < Rnms.w; x++) {
+            if (get_pixel(Rnms, x, y, 0) > thresh) {
+                d[index++] = describe_index(Rnms, y * Rnms.w + x);
+            }
+        }
+    }
 
     free_image(S);
     free_image(R);

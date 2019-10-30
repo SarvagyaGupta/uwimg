@@ -463,7 +463,6 @@ void test_hw3()
     test_structure();
     test_cornerness();
     printf("%d tests, %d passed, %d failed\n", tests_total, tests_total-tests_fail, tests_fail);
-    printf("%d tests, %d passed, %d failed\n", tests_total, tests_total-tests_fail, tests_fail);
 }
 void test_hw4()
 {
