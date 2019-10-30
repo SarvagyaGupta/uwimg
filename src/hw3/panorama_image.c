@@ -119,9 +119,9 @@ image find_and_draw_matches(image a, image b, float sigma, float thresh, int nms
 // returns: l1 distance between arrays (sum of absolute differences).
 float l1_distance(float *a, float *b, int n)
 {
-    float sum = 0.0;
+    float sum = 0;
     for (int i = 0; i < n; i++) {
-        sum += fabs(a[i] - b[i]);
+        sum += fabsf(a[i] - b[i]);
     }
     return sum;
 }
@@ -134,17 +134,22 @@ float l1_distance(float *a, float *b, int n)
 //          one other descriptor in b.
 match *match_descriptors(descriptor *a, int an, descriptor *b, int bn, int *mn)
 {
+    if (bn == 0) {
+        *mn = 0;
+        return NULL;
+    }
+
     *mn = an;
     match *matches = calloc(an, sizeof(match));
 
     for (int i = 0; i < an; i++) {
-        int min_index = 0;
-        float min_distance = l1_distance(a[i].data, b[0].data, a[i].n);
+        int min_index = -1;
+        float min_distance = 0;
 
-        for (int j = 1; j < bn; j++) {
+        for (int j = 0; j < bn; j++) {
             float dist = l1_distance(a[i].data, b[j].data, a[i].n);
 
-            if (min_distance > dist) {
+            if (min_index == -1 || min_distance > dist) {
                 min_index = j;
                 min_distance = dist;
             }
@@ -160,7 +165,7 @@ match *match_descriptors(descriptor *a, int an, descriptor *b, int bn, int *mn)
     int count = 0;
     int *seen = calloc(bn, sizeof(int));
 
-    qsort(matches, *mn, sizeof(match), match_compare);
+    qsort(matches, an, sizeof(match), match_compare);
 
     for (int i = 0; i < an; i++) {
         if (!seen[matches[i].bi]) {
