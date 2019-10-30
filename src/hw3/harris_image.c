@@ -8,6 +8,7 @@
 #include <time.h>
 
 void set_channel(image, int, image, image);
+float get_1d_gaussian_value(int, float);
 
 // Frees an array of descriptors.
 // descriptor *d: the array.
@@ -85,8 +86,20 @@ void mark_corners(image im, descriptor *d, int n)
 // returns: single row image of the filter.
 image make_1d_gaussian(float sigma)
 {
-    // TODO: optional, make separable 1d Gaussian.
-    return make_image(1,1,1);
+    int width = ceil(sigma * 6);
+    width += width % 2 == 0 ? 1 : 0;
+
+    image filter = make_image(width, 1, 1);
+    for (int x = -width / 2; x <= width / 2; x++) {
+        set_pixel(filter, x + width / 2, 0, 0, get_1d_gaussian_value(x, sigma));
+    }
+    return filter;
+}
+
+float get_1d_gaussian_value(int x, float sigma) {
+    double expo = exp(-((pow(x, 2)) / (2 * pow(sigma, 2))));
+    float scale = sqrt(TWOPI * pow(sigma, 2));
+    return expo / scale;
 }
 
 // Smooths an image using separable Gaussian filter.
@@ -95,15 +108,24 @@ image make_1d_gaussian(float sigma)
 // returns: smoothed image.
 image smooth_image(image im, float sigma)
 {
-    if (1) {
+    if (0) {
         image g = make_gaussian_filter(sigma);
         image s = convolve_image(im, g, 1);
         free_image(g);
         return s;
     } else {
-        // TODO: optional, use two convolutions with 1d gaussian filter.
-        // If you implement, disable the above if check.
-        return copy_image(im);
+        image g = make_1d_gaussian(sigma);
+        image s1 = convolve_image(im, g, 1);
+
+        g.h = g.w;
+        g.w = 1;
+
+        image s2 = convolve_image(s1, g, 1);
+
+        free_image(g);
+        free_image(s1);
+
+        return s2;
     }
 }
 
