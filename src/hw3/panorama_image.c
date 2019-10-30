@@ -6,6 +6,8 @@
 #include "image.h"
 #include "matrix.h"
 
+void swap(match*, int, int);
+
 // Comparator for matches
 // const void *a, *b: pointers to the matches to compare.
 // returns: result of comparison, 0 if same, 1 if a > b, -1 if a < b.
@@ -117,8 +119,11 @@ image find_and_draw_matches(image a, image b, float sigma, float thresh, int nms
 // returns: l1 distance between arrays (sum of absolute differences).
 float l1_distance(float *a, float *b, int n)
 {
-    // TODO: return the correct number.
-    return 0;
+    float sum = 0.0;
+    for (int i = 0; i < n; i++) {
+        sum += fabs(a[i] - b[i]);
+    }
+    return sum;
 }
 
 // Finds best matches between descriptors of two images.
@@ -129,33 +134,56 @@ float l1_distance(float *a, float *b, int n)
 //          one other descriptor in b.
 match *match_descriptors(descriptor *a, int an, descriptor *b, int bn, int *mn)
 {
-    int i,j;
-
-    // We will have at most an matches.
     *mn = an;
-    match *m = calloc(an, sizeof(match));
-    for(j = 0; j < an; ++j){
-        // TODO: for every descriptor in a, find best match in b.
-        // record ai as the index in *a and bi as the index in *b.
-        int bind = 0; // <- find the best match
-        m[j].ai = j;
-        m[j].bi = bind; // <- should be index in b.
-        m[j].p = a[j].p;
-        m[j].q = b[bind].p;
-        m[j].distance = 0; // <- should be the smallest L1 distance!
+    match *matches = calloc(an, sizeof(match));
+
+    for (int i = 0; i < an; i++) {
+        int min_index = 0;
+        float min_distance = l1_distance(a[i].data, b[0].data, a[i].n);
+
+        for (int j = 1; j < bn; j++) {
+            float dist = l1_distance(a[i].data, b[j].data, a[i].n);
+
+            if (min_distance > dist) {
+                min_index = j;
+                min_distance = dist;
+            }
+        }
+
+        matches[i].ai = i;
+        matches[i].bi = min_index;
+        matches[i].p = a[i].p;
+        matches[i].q = b[min_index].p;
+        matches[i].distance = min_distance;
     }
 
     int count = 0;
     int *seen = calloc(bn, sizeof(int));
-    // TODO: we want matches to be injective (one-to-one).
-    // Sort matches based on distance using match_compare and qsort.
-    // Then throw out matches to the same element in b. Use seen to keep track.
-    // Each point should only be a part of one match.
-    // Some points will not be in a match.
-    // In practice just bring good matches to front of list, set *mn.
+
+    qsort(matches, *mn, sizeof(match), match_compare);
+
+    for (int i = 0; i < an; i++) {
+        if (!seen[matches[i].bi]) {
+            seen[matches[i].bi] = 1;
+
+            if (count != i) {
+                swap(matches, count, i);
+            }
+
+            count++;
+        }
+    }
+
     *mn = count;
     free(seen);
-    return m;
+
+    return matches;
+}
+
+void swap(match *matches, int i, int j) {
+    match temp = matches[i];
+    matches[i] = matches[j];
+    matches[j] = temp;
 }
 
 // Apply a projective transformation to a point.
