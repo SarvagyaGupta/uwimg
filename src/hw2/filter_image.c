@@ -186,10 +186,10 @@ image make_gx_filter()
     image filter = make_image(3, 3, 1);
 
     set_pixel(filter, 0, 0, 0, -1);
-    set_pixel(filter, 0, 2, 0, 1);
-    set_pixel(filter, 1, 0, 0, -2);
-    set_pixel(filter, 1, 2, 0, 2);
-    set_pixel(filter, 2, 0, 0, -1);
+    set_pixel(filter, 2, 0, 0, 1);
+    set_pixel(filter, 0, 1, 0, -2);
+    set_pixel(filter, 2, 1, 0, 2);
+    set_pixel(filter, 0, 2, 0, -1);
     set_pixel(filter, 2, 2, 0, 1);
 
     return filter;
@@ -200,10 +200,10 @@ image make_gy_filter()
     image filter = make_image(3, 3, 1);
 
     set_pixel(filter, 0, 0, 0, -1);
-    set_pixel(filter, 0, 1, 0, -2);
-    set_pixel(filter, 0, 2, 0, -1);
-    set_pixel(filter, 2, 0, 0, 1);
-    set_pixel(filter, 2, 1, 0, 2);
+    set_pixel(filter, 1, 0, 0, -2);
+    set_pixel(filter, 2, 0, 0, -1);
+    set_pixel(filter, 0, 2, 0, 1);
+    set_pixel(filter, 1, 2, 0, 2);
     set_pixel(filter, 2, 2, 0, 1);
 
     return filter;
@@ -238,8 +238,11 @@ void feature_normalize(image im)
 
 image *sobel_image(image im)
 {
-    image gradient_x = convolve_image(im, make_gx_filter(), 0);
-    image gradient_y = convolve_image(im, make_gy_filter(), 0);
+    image gradient_x = make_gx_filter();
+    image gradient_y = make_gy_filter();
+
+    image image_gradient_x = convolve_image(im, gradient_x, 0);
+    image image_gradient_y = convolve_image(im, gradient_y, 0);
 
     image* sobel_images = calloc(2, sizeof(image));
     sobel_images[0] = make_image(im.w, im.h, 1);
@@ -247,15 +250,18 @@ image *sobel_image(image im)
 
     for (int y = 0; y < im.h; y++) {
         for (int x = 0; x < im.w; x++) {
-            float gradient_x_val = get_pixel(gradient_x, x, y, 0);
-            float gradient_y_val = get_pixel(gradient_y, x, y, 0);
+            float gradient_x_val = get_pixel(image_gradient_x, x, y, 0);
+            float gradient_y_val = get_pixel(image_gradient_y, x, y, 0);
             set_pixel(sobel_images[0], x, y, 0, sqrt(pow(gradient_x_val, 2) + pow(gradient_y_val, 2)));
-            set_pixel(sobel_images[1], x, y, 0, atan2(gradient_x_val, gradient_y_val));
+            set_pixel(sobel_images[1], x, y, 0, atan2(gradient_y_val, gradient_x_val));
         }
     }
 
     free_image(gradient_x);
     free_image(gradient_y);
+    free_image(image_gradient_x);
+    free_image(image_gradient_y);
+
     return sobel_images;
 }
 
