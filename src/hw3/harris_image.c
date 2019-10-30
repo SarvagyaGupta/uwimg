@@ -7,6 +7,8 @@
 #include "matrix.h"
 #include <time.h>
 
+void set_channel(image, int, image, image);
+
 // Frees an array of descriptors.
 // descriptor *d: the array.
 // int n: number of elements in array.
@@ -50,7 +52,7 @@ descriptor describe_index(image im, int i)
 
 // Marks the spot of a point in an image.
 // image im: image to mark.
-// ponit p: spot to mark in the image.
+// point p: spot to mark in the image.
 void mark_spot(image im, point p)
 {
     int x = p.x;
@@ -93,7 +95,7 @@ image make_1d_gaussian(float sigma)
 // returns: smoothed image.
 image smooth_image(image im, float sigma)
 {
-    if(1){
+    if (1) {
         image g = make_gaussian_filter(sigma);
         image s = convolve_image(im, g, 1);
         free_image(g);
@@ -112,9 +114,35 @@ image smooth_image(image im, float sigma)
 //          third channel is IxIy.
 image structure_matrix(image im, float sigma)
 {
-    image S = make_image(im.w, im.h, 3);
-    // TODO: calculate structure matrix for im.
-    return S;
+    image gradient_x = make_gx_filter();
+    image gradient_y = make_gy_filter();
+
+    image image_gradient_x = convolve_image(im, gradient_x, 0);
+    image image_gradient_y = convolve_image(im, gradient_y, 0);
+
+    image structure = make_image(im.w, im.h, 3);
+
+    set_channel(structure, 0, image_gradient_x, image_gradient_x);
+    set_channel(structure, 1, image_gradient_y, image_gradient_y);
+    set_channel(structure, 2, image_gradient_x, image_gradient_y);
+
+    image weighted_structure = smooth_image(structure, sigma);
+
+    free_image(gradient_x);
+    free_image(gradient_y);
+    free_image(image_gradient_x);
+    free_image(image_gradient_y);
+    free_image(structure);
+
+    return weighted_structure;
+}
+
+void set_channel(image structure, int channel, image first, image second) {
+    for (int y = 0; y < structure.h; y++) {
+        for (int x = 0; x < structure.w; x++) {
+            set_pixel(structure, x, y, channel, get_pixel(first, x, y, 0) * get_pixel(second, x, y, 0));
+        }
+    }
 }
 
 // Estimate the cornerness of each pixel given a structure matrix S.
