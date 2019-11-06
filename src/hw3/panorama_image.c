@@ -355,10 +355,10 @@ image combine_images(image a, image b, matrix H)
 
     // Can disable this if you are making very big panoramas.
     // Usually this means there was an error in calculating H.
-    if(w > 7000 || h > 7000){
-        fprintf(stderr, "output too big, stopping\n");
-        return copy_image(a);
-    }
+    // if (w > 7000 || h > 7000){
+    //     fprintf(stderr, "output too big, stopping\n");
+    //     return copy_image(a);
+    // }
 
     int i, j, k;
     image c = make_image(w, h, a.c);
@@ -375,6 +375,7 @@ image combine_images(image a, image b, matrix H)
         for (j = topleft.y; j < botright.y; ++j) {
             for (i = topleft.x; i < botright.x; ++i) {
                 point p = project_point(H, make_point(i, j));
+
                 if (p.x >= 0 && p.x < b.w && p.y >= 0 && p.y < b.h) {
                     float val = bilinear_interpolate(b, p.x, p.y, k);
                     set_pixel(c, i - dx, j - dy, k, val);
@@ -400,7 +401,7 @@ image panorama_image(image a, image b, float sigma, float thresh, int nms, float
     int an = 0;
     int bn = 0;
     int mn = 0;
-    
+
     // Calculate corners and descriptors
     descriptor *ad = harris_corner_detector(a, sigma, thresh, nms, &an);
     descriptor *bd = harris_corner_detector(b, sigma, thresh, nms, &bn);
@@ -411,7 +412,7 @@ image panorama_image(image a, image b, float sigma, float thresh, int nms, float
     // Run RANSAC to find the homography
     matrix H = RANSAC(m, mn, inlier_thresh, iters, cutoff);
 
-    if(1){
+    if (0) {
         // Mark corners and matches between images
         mark_corners(a, ad, an);
         mark_corners(b, bd, bn);
@@ -434,7 +435,28 @@ image panorama_image(image a, image b, float sigma, float thresh, int nms, float
 // returns: image projected onto cylinder, then flattened.
 image cylindrical_project(image im, float f)
 {
-    //TODO: project image onto a cylinder
-    image c = copy_image(im);
-    return c;
+    int xc = im.w / 2;
+    int yc = im.h / 2;
+    int w = 2 * f * atan2(xc, f) - 1;
+
+    image project_image = make_image(w, im.h, im.c);
+
+    for (int i = -yc; i < im.h - yc; i++) {
+        for (int j = -w / 2; j <= w / 2; j++) {
+            float theta = j / f;
+            float height = i / f;
+
+            float x_ = f * sin(theta) / cos(theta) + xc;
+            float y_ = f * height / cos(theta) + yc;
+
+            if (x_ >= 0 && x_ < im.w && y_ >= 0 && y_ < im.h) {
+                for (int c = 0; c < im.c; c++) {
+                    float val = bilinear_interpolate(im, x_, y_, c);
+                    set_pixel(project_image, j + w / 2, i + yc, c, val);
+                }
+            }
+        }
+    }
+
+    return project_image;
 }
