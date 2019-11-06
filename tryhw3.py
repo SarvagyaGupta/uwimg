@@ -58,13 +58,13 @@ def field_panorama():
 
     pan = panorama_image(im5, im6, thresh=2, iters=50000, inlier_thresh=3)
     save_image(pan, "field_panorama_1")
-    pan2 = panorama_image(pan, im7, thresh=2, iters=50000, inlier_thresh=3)
+    pan2 = panorama_image(pan, im7, thresh=2, iters=50000, inlier_thresh=2)
     save_image(pan2, "field_panorama_2")
-    pan3 = panorama_image(pan2, im8, thresh=2, iters=50000, inlier_thresh=3)
+    pan3 = panorama_image(pan2, im8, thresh=2, iters=50000, inlier_thresh=6)
     save_image(pan3, "field_panorama_3")
     pan4 = panorama_image(pan3, im4, thresh=2, iters=50000, inlier_thresh=3)
     save_image(pan4, "field_panorama_4")
-    pan5 = panorama_image(pan4, im3, thresh=2, iters=50000, inlier_thresh=2)
+    pan5 = panorama_image(pan4, im3, thresh=2, iters=50000, inlier_thresh=5)
     save_image(pan5, "field_panorama_5")
 
 # draw_corners()
