@@ -68,4 +68,3 @@ save_image(reconstruct, "reconstruct_funny_vinni")
 im = load_image("data/dog.jpg")
 res = colorize_sobel(im)
 save_image(res, "colored_sobel_image")
->>>>>>> e127fc6122a16771eac72802a60886160f9b82dc
