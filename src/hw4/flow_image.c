@@ -6,6 +6,8 @@
 #include "image.h"
 #include "matrix.h"
 
+image* image_gradients(image, int);
+
 // Draws a line on an image with color corresponding to the direction of line
 // image im: image to draw line on
 // float x, y: starting point of line
@@ -47,7 +49,23 @@ void draw_line(image im, float x, float y, float dx, float dy)
 image make_integral_image(image im)
 {
     image integ = make_image(im.w, im.h, im.c);
-    // TODO: fill in the integral image
+    for (int c = 0; c < im.c; c++) {
+        for (int h = 0; h < im.h; h++) {
+            for (int w = 0; w < im.w; w++) {
+                float val = get_pixel(im, w, h, c);
+                if (w > 0) {
+                    val += get_pixel(integ, w - 1, h, c);
+                }
+                if (h > 0) {
+                    val += get_pixel(integ, w, h - 1, c);
+                }
+                if (h > 0 && w > 0) {
+                    val -= get_pixel(integ, w - 1, h - 1, c);
+                }
+                set_pixel(integ, w, h, c, val);
+            }
+        }
+    }
     return integ;
 }
 
@@ -57,10 +75,37 @@ image make_integral_image(image im)
 // returns: smoothed image
 image box_filter_image(image im, int s)
 {
-    int i,j,k;
     image integ = make_integral_image(im);
     image S = make_image(im.w, im.h, im.c);
-    // TODO: fill in S using the integral image.
+
+    int half = s / 2;
+    for (int c = 0; c < im.c; c++) {
+        for (int h = 0; h < im.h; h++) {
+            for (int w = 0; w < im.w; w++) {
+                float val = 0;
+
+                if (w - half >= 0 && h - half >= 0) {
+                    val += get_pixel(integ, w - half, h - half, c);
+                }
+
+                if (w + half < integ.w && h - half >= 0) {
+                    val -= get_pixel(integ, w + half, h - half, c);
+                }
+
+                if (w - half >= 0 && h + half < integ.h) {
+                    val -= get_pixel(integ, w - half, h + half, c);
+                }
+
+                if (w + half < integ.w && h + half < integ.h) {
+                    val += get_pixel(integ, w + half, h + half, c);
+                }
+
+                set_pixel(S, w, h, c, val / (s * s));
+            }
+        }
+    }
+
+    free_image(integ);
     return S;
 }
 
@@ -74,20 +119,53 @@ image time_structure_matrix(image im, image prev, int s)
 {
     int i;
     int converted = 0;
-    if(im.c == 3){
+    if (im.c == 3) {
         converted = 1;
         im = rgb_to_grayscale(im);
         prev = rgb_to_grayscale(prev);
     }
 
-    // TODO: calculate gradients, structure components, and smooth them
+    image* gradients_im = image_gradients(im);
+    image S = make_image(im.w, im.h, 5);
 
-    image S;
+    for (int h = 0; h < im.h; h++) {
+        for (int w = 0; w < im.w; w++) {
+            float Ix = get_pixel(gradients_im[0], w, h, 0);
+            float Iy = get_pixel(gradients_im[1], w, h, 0);
+            float It = get_pixel(prev, w, h, 0) - get_pixel(im, w, h, 0);
 
-    if(converted){
+            set_pixel(S, w, h, 0, Ix * Ix);
+            set_pixel(S, w, h, 1, Iy * Iy);
+            set_pixel(S, w, h, 2, Ix * Iy);
+            set_pixel(S, w, h, 3, Ix * It);
+            set_pixel(S, w, h, 4, Iy * It);
+        }
+    }
+
+    image smooth_image = box_filter_image(S, s);
+    free_image(S);
+    free_image(gradients_im[0]);
+    free_image(gradients_im[1]);
+
+    if (converted) {
         free_image(im); free_image(prev);
     }
-    return S;
+    return smooth_image;
+}
+
+image* image_gradients(image im) {
+    image gradient_x = make_gx_filter();
+    image gradient_y = make_gy_filter();
+
+    image* gradients = calloc(2, sizeof(image));
+
+    gradients[0] = convolve_image(im, gradient_x, 0);
+    gradients[1] = convolve_image(im, gradient_y, 0);
+
+    free_image(gradient_x);
+    free_image(gradient_y);
+
+    return gradients;
 }
 
 // Calculate the velocity given a structure image
@@ -97,7 +175,8 @@ image velocity_image(image S, int stride)
 {
     image v = make_image(S.w/stride, S.h/stride, 3);
     int i, j;
-    matrix M = make_matrix(2,2);
+    matrix M = make_matrix(2, 2);
+    matrix b = make_matrix(2, 1);
     for(j = (stride-1)/2; j < S.h; j += stride){
         for(i = (stride-1)/2; i < S.w; i += stride){
             float Ixx = S.data[i + S.w*j + 0*S.w*S.h];
@@ -106,15 +185,33 @@ image velocity_image(image S, int stride)
             float Ixt = S.data[i + S.w*j + 3*S.w*S.h];
             float Iyt = S.data[i + S.w*j + 4*S.w*S.h];
 
-            // TODO: calculate vx and vy using the flow equation
-            float vx = 0;
-            float vy = 0;
+            M.data[0][0] = Ixx; M.data[0][1] = M.data[1][0] = Ixy; M.data[1][1] = Iyy;
+            matrix transpose = transpose_matrix(M);
+            matrix square = matrix_mult_matrix(transpose, M);
+            matrix inverse = matrix_invert(square);
 
-            set_pixel(v, i/stride, j/stride, 0, vx);
-            set_pixel(v, i/stride, j/stride, 1, vy);
+            if (inverse.cols != 0 && inverse.rows != 0) {
+                b.data[0][0] = Ixt; b.data[1][0] = Iyt;
+
+                matrix first = matrix_mult_matrix(inverse, transpose);
+                matrix solved = matrix_mult_matrix(first, b);
+
+                set_pixel(v, i/stride, j/stride, 0, solved.data[0][0]);
+                set_pixel(v, i/stride, j/stride, 1, solved.data[1][0]);
+
+                free_matrix(first);
+                free_matrix(solved);
+            }
+
+            free_matrix(transpose);
+            free_matrix(square);
+            free_matrix(inverse);
         }
     }
+
     free_matrix(M);
+    free_matrix(b);
+
     return v;
 }
 
