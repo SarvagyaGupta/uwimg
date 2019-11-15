@@ -49,9 +49,9 @@ extern "C" {
         if(f) cap = new VideoCapture(f);
         else cap = new VideoCapture(c);
         if(!cap->isOpened()) return 0;
-        if(w) cap->set(CAP_PROP_FRAME_WIDTH, w);
-        if(h) cap->set(CAP_PROP_FRAME_HEIGHT, w);
-        if(fps) cap->set(CAP_PROP_FPS, w);
+        if(w) cap->set(CV_CAP_PROP_FRAME_WIDTH, w);
+        if(h) cap->set(CV_CAP_PROP_FRAME_HEIGHT, w);
+        if(fps) cap->set(CV_CAP_PROP_FPS, w);
         return (void *) cap;
     }
 
@@ -101,7 +101,7 @@ extern "C" {
     {
         namedWindow(name, WINDOW_NORMAL); 
         if (fullscreen) {
-            setWindowProperty(name, WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
+            setWindowProperty(name, WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
         } else {
             resizeWindow(name, w, h);
             if(strcmp(name, "Demo") == 0) moveWindow(name, 0, 0);
