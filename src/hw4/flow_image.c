@@ -6,7 +6,7 @@
 #include "image.h"
 #include "matrix.h"
 
-image* image_gradients(image, int);
+image* image_gradients(image);
 
 // Draws a line on an image with color corresponding to the direction of line
 // image im: image to draw line on
@@ -117,7 +117,6 @@ image box_filter_image(image im, int s)
 //          3rd channel is IxIy, 4th channel is IxIt, 5th channel is IyIt.
 image time_structure_matrix(image im, image prev, int s)
 {
-    int i;
     int converted = 0;
     if (im.c == 3) {
         converted = 1;
