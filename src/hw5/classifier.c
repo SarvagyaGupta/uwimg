@@ -10,23 +10,26 @@
 void activate_matrix(matrix m, ACTIVATION a)
 {
     int i, j;
-    for(i = 0; i < m.rows; ++i){
+    for (i = 0; i < m.rows; ++i) {
         double sum = 0;
-        for(j = 0; j < m.cols; ++j){
+        for (j = 0; j < m.cols; ++j) {
             double x = m.data[i][j];
-            if(a == LOGISTIC){
-                // TODO
-            } else if (a == RELU){
-                // TODO
-            } else if (a == LRELU){
-                // TODO
-            } else if (a == SOFTMAX){
-                // TODO
+            if (a == LOGISTIC) {
+                m.data[i][j] = 1 / (1 + exp(-x));
+            } else if (a == RELU) {
+                m.data[i][j] = (x > 0) ? x : 0;
+            } else if (a == LRELU) {
+                m.data[i][j] = x * ((x > 0) ? 1 : 0.1);
+            } else if (a == SOFTMAX) {
+                m.data[i][j] = exp(x);
             }
             sum += m.data[i][j];
         }
+
         if (a == SOFTMAX) {
-            // TODO: have to normalize by sum if we are using SOFTMAX
+            for (j = 0; j < m.cols; ++j) {
+                m.data[i][j] /= sum;
+            }
         }
     }
 }
@@ -42,7 +45,13 @@ void gradient_matrix(matrix m, ACTIVATION a, matrix d)
     for(i = 0; i < m.rows; ++i){
         for(j = 0; j < m.cols; ++j){
             double x = m.data[i][j];
-            // TODO: multiply the correct element of d by the gradient
+            if (a == LOGISTIC) {
+                d.data[i][j] *= x * (1 - x);
+            } else if (a == RELU) {
+                d.data[i][j] = (x > 0) ? d.data[i][j] : 0;
+            } else if (a == LRELU) {
+                d.data[i][j] = d.data[i][j] * ((x > 0) ? 1 : 0.1);
+            }
         }
     }
 }
@@ -53,16 +62,13 @@ void gradient_matrix(matrix m, ACTIVATION a, matrix d)
 // returns: matrix that is output of the layer
 matrix forward_layer(layer *l, matrix in)
 {
-
     l->in = in;  // Save the input for backpropagation
 
-
-    // TODO: fix this! multiply input by weights and apply activation function.
-    matrix out = make_matrix(in.rows, l->w.cols);
-
-
+    matrix out = matrix_mult_matrix(in, l->w);
+    activate_matrix(out, l->activation);
     free_matrix(l->out);// free the old output
     l->out = out;       // Save the current output for gradient calculation
+
     return out;
 }
 
@@ -72,21 +78,17 @@ matrix forward_layer(layer *l, matrix in)
 // returns: matrix, partial derivative of loss w.r.t. input to layer
 matrix backward_layer(layer *l, matrix delta)
 {
-    // 1.4.1
-    // delta is dL/dy
-    // TODO: modify it in place to be dL/d(xw)
+    gradient_matrix(l->out, l->activation, delta);
 
-
-    // 1.4.2
-    // TODO: then calculate dL/dw and save it in l->dw
     free_matrix(l->dw);
-    matrix dw = make_matrix(l->w.rows, l->w.cols); // replace this
+    matrix in_transpose = transpose_matrix(l->in);
+    matrix dw = matrix_mult_matrix(in_transpose, delta); // replace this
     l->dw = dw;
+    free_matrix(in_transpose);
 
-    
-    // 1.4.3
-    // TODO: finally, calculate dL/dx and return it.
-    matrix dx = make_matrix(l->in.rows, l->in.cols); // replace this
+    matrix w_transpose = transpose_matrix(l->w);
+    matrix dx = matrix_mult_matrix(delta, w_transpose); // replace this
+    free_matrix(w_transpose);
 
     return dx;
 }
@@ -98,16 +100,25 @@ matrix backward_layer(layer *l, matrix delta)
 // double decay: value for weight decay
 void update_layer(layer *l, double rate, double momentum, double decay)
 {
-    // TODO:
-    // Calculate Δw_t = dL/dw_t - λw_t + mΔw_{t-1}
-    // save it to l->v
-
+    // Update l->v
+    matrix v = copy_matrix(l->dw);
+    for (int i = 0; i < v.rows; i++) {
+        for (int j = 0; j < v.cols; j++) {
+            v.data[i][j] -= decay * l->w.data[i][j] - momentum * l->v.data[i][j];
+        }
+    }
+    free_matrix(l->v);
+    l->v = v;
 
     // Update l->w
-
-
-    // Remember to free any intermediate results to avoid memory leaks
-
+    matrix weights_copy = copy_matrix(l->w);
+    for (int i = 0; i < weights_copy.rows; i++) {
+        for (int j = 0; j < weights_copy.cols; j++) {
+            weights_copy.data[i][j] += rate * l->v.data[i][j];
+        }
+    }
+    free_matrix(l->w);
+    l->w = weights_copy;
 }
 
 // Make a new layer for our model
@@ -242,7 +253,7 @@ void train_model(model m, data d, int batch, int iters, double rate, double mome
 }
 
 
-// Questions 
+// Questions
 //
 // 5.2.2.1 Why might we be interested in both training accuracy and testing accuracy? What do these two numbers tell us about our current model?
 // TODO
